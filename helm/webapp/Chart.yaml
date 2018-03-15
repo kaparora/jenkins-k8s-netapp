@@ -1,0 +1,8 @@
+name: webapp
+home: https://github.com/NetAppEMEA
+version: 1.0
+description: This Sample helm chart deploys a webapp with redis
+sources:
+- https://github.com/NetAppEMEA/kubernetes-netapp
+maintainers:
+- name: Kapil Arora

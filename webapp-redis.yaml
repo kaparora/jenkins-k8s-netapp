@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vol-redis
+  annotations:
+    volume.beta.kubernetes.io/storage-class: basic
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: redis
+  name: redis
+spec:
+  ports:
+    # the port that this service should serve on
+    - port: 6379
+  # label keys and values that must match in order to receive traffic for this service
+  selector:
+    name: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: webapp
+  name: webapp
+spec:
+  ports:
+    # the port that this service should serve on
+    - port: 80
+    - nodePort: 30000
+  # label keys and values that must match in order to receive traffic for this service
+  selector:
+    name: webapp
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+  labels:
+    name: redis
+spec:
+  containers:
+    - resources:
+        limits :
+          cpu: 0.5
+      image: redis:3.2.6-alpine
+      command:
+        - "redis-server"
+      args:
+        - "--appendonly" 
+        - "yes"
+      name: redis
+      ports:
+        - containerPort: 6379
+          name: redis
+      volumeMounts:
+          # name must match the volume name below
+        - name: redis-persistent-storage
+          # mount path within the container
+          mountPath: /data
+  volumes:
+    - name: redis-persistent-storage
+      persistentVolumeClaim:
+        claimName: vol-redis
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp
+  labels:
+    name: webapp
+spec:
+  containers:
+    - image: "kaparora/webapp:latest"
+      name: webapp
+      env:
+        - name: USE_REDIS_PORT
+          value: "6379"
+        - name: USE_REDIS_HOST
+          value: "redis"
+      ports:
+        - containerPort: 80
+          name: webapp

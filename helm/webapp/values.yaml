@@ -1,0 +1,9 @@
+redisImage:
+  name: redis
+  tag: 3.2.6-alpine
+webappImage:
+  name: kaparora/webapp
+  tag: latest
+service:
+  nodePort: 30000
+cloneSource:

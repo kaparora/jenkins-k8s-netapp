@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "webapp.fullname" . }}-vol-redis
+  annotations:
+    volume.beta.kubernetes.io/storage-class: netapp-nfs
+  {{- if .Values.cloneSource }}
+    trident.netapp.io/cloneFromPVC: {{.Values.cloneSource}}-webapp-vol-redis
+  {{- end }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: {{ template "webapp.fullname" . }}-webapp
+  name: {{ template "webapp.fullname" . }}-webapp
+spec:
+  ports:
+    - port: 80
+      nodePort: {{.Values.service.nodePort}}
+  selector:
+    app: {{ template "webapp.fullname" . }}
+  type: LoadBalancer
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "webapp.fullname" . }}
+  labels:
+    app: {{ template "webapp.fullname" . }}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "webapp.fullname" . }}
+    spec:
+      nodeSelector:
+        app: web
+      containers:
+      - name: webapp
+        image: {{.Values.webappImage.name}}:{{.Values.webappImage.tag}}
+        ports:
+        - containerPort: 80
+        env:
+        - name: USE_REDIS_PORT
+          value: "6379"
+        - name: USE_REDIS_HOST
+          value: "localhost"
+      - name: redis
+        image: {{.Values.redisImage.name}}:{{.Values.redisImage.tag}}
+        ports:
+        - containerPort: 6379
+        command:
+        - "redis-server"
+        args:
+        - "--appendonly"
+        - "yes"
+        volumeMounts:
+        - name: redis-persistent-storage
+          mountPath: /data
+      volumes:
+      - name: redis-persistent-storage
+        persistentVolumeClaim:
+          claimName: {{ template "webapp.fullname" . }}-vol-redis
