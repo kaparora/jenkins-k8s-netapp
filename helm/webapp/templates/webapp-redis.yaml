@@ -3,7 +3,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ template "webapp.fullname" . }}-vol-redis
   annotations:
-    volume.beta.kubernetes.io/storage-class: netapp-nfs
+    volume.beta.kubernetes.io/storage-class: basic
   {{- if .Values.cloneSource }}
     trident.netapp.io/cloneFromPVC: {{.Values.cloneSource}}-webapp-vol-redis
   {{- end }}
