@@ -35,7 +35,7 @@ spec:
   ports:
     # the port that this service should serve on
     - port: 80
-    - nodePort: 30000
+      nodePort: 30000
   # label keys and values that must match in order to receive traffic for this service
   selector:
     name: webapp
